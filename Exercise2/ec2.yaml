@@ -16,6 +16,10 @@ Mappings:
       "1": eu-central-1a
       "2": eu-central-1b
       "3": eu-central-1c
+    us-east-1:
+      "1": us-east-1a
+      "2": us-east-1b
+      "3": us-east-1c      
   RegionMap:
     eu-west-1:
       AMI: ami-0fc970315c2d38f01
@@ -23,6 +27,8 @@ Mappings:
       AMI: ami-098828924dc89ea4a
     eu-central-1:
       AMI: ami-0a6dc7529cd559185
+    us-east-1:
+      AMI: ami-0022f774911c1d690
 
 Parameters:
   Subnet:

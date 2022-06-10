@@ -29,9 +29,18 @@ Resources:
 
 As you can see the templae creates two **nested stacks** and uses S3BucketUrl parameter to provide location of their templates.
 
-In order to deploy this stack we need to upload all the templates to an S3 bucket. Let's do that by executing following command in the **Exercise2** directory:
+Before we start, let's set some environment variables so we do not have to type them over and over again. Let's set two variables ot the values of outputs from Exercise 1:
+
 ```
-aws s3 cp . s3://BUCKET_NAME_FROM_EXERCISE1 --recursive
+export BUCKET_NAME=<your bucket name here>
+export BUCKET_URL=<your bucket URL here>
+```
+
+we can verify that the variables have been set correctly by executing 
+
+In order to deploy this stack we need to upload all the templates to an S3 bucket. Let's do that by executing following command in the **Exercise2** directory using the bucket name from Exercise 1.
+```
+aws s3 cp . s3://$BUCKET_NAME --recursive
 ```
 
 The command should produce output similar to the one below:
@@ -45,7 +54,7 @@ upload: ./INSTRUCTIONS.md to s3://test-s3bucket-vb4a4enxs4aw/INSTRUCTIONS.md
 Now let's deploy the top level template:
 
 ```
-aws cloudformation create-stack --stack-name Web --template-url https://test-s3bucket-vb4a4enxs4aw.s3.amazonaws.com/web.yaml --parameters ParameterKey=S3BucketUrl,ParameterValue=https://test-s3bucket-vb4a4enxs4aw.s3.amazonaws.com --capabilities CAPABILITY_IAM
+aws cloudformation create-stack --stack-name Web --template-url $BUCKET_URL/web.yaml --parameters ParameterKey=S3BucketUrl,ParameterValue=$BUCKET_URL --capabilities CAPABILITY_IAM
 ```
 
 The command should immediately return producing output similar to the one below:
@@ -91,7 +100,7 @@ This should produce output similar to the one below:
 }
 ```
 
-The stack status indicates progress of the operation. Status vale **CREATE_COMPLETE** indicates that all resources have been deployed. At this stage the output value of the stack can be seen:
+The StackStatus indicates progress of the operation. Status value of **CREATE_COMPLETE** indicates that all resources have been deployed. At this stage the output value of the stack can be seen:
 
 ```
 {
@@ -130,7 +139,7 @@ The stack status indicates progress of the operation. Status vale **CREATE_COMPL
 }
 ```
 
-Take note of the public IP address of the deployed web server. let's test it from the command line:
+Take note of the public IP address of the deployed web server. Let's test it from the command line:
 
 ```
 curl -v http://IP_ADDRESS_HERE -o /dev/null
