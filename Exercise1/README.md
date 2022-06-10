@@ -1,6 +1,6 @@
 # Exercise 1
 
-The purpose of this exercise is to familiarize you with the basic of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of a simplae CludFormation tamplate:
+The purpose of this exercise is to familiarize you with the basic of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of a simple CludFormation template:
 ```
 # Optional template format indicator
 AWSTemplateFormatVersion: "2010-09-09"
@@ -20,7 +20,7 @@ Resources:
 
 ```
 
-Templates describe resources and can be deployed through CloudFormation. Once deployed, CloudFormation creates a **stack**. In order to deploy the template, in the **Exercise1** directory execute following command:
+Templates describe AWS resources and can be deployed through CloudFormation. Once deployed, CloudFormation creates a **stack**. In order to deploy the template, in the **Exercise1** directory execute following command:
 
 ```
 aws cloudformation deploy --stack-name Test --template-file s3.yaml --parameter-overrides Name=mybucket
@@ -98,7 +98,7 @@ Once redeployed, we can check stack outputs by executing following command:
 aws cloudformation describe-stacks --stack-name Test
 ```
 
-Take note of the outpus, and save the values for future reference as we will need them in the next exercise. Notice the semi-random nature of the bucklet's name.
+Take note of the outpus, and save the values for future reference as we will need them in the next exercise. Notice the semi-random nature of the bucket's name.
 
 ```
 {
