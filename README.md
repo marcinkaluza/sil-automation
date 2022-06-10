@@ -1,6 +1,8 @@
 # About this lab
 
-# Prerequisited
+TBC
 
+# Prerequisited
+TBC
 aws cli
 jq install instructions
