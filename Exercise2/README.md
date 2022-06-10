@@ -91,5 +91,85 @@ This should produce output similar to the one below:
 }
 ```
 
-The stack status indicates progress of the operation. Status vale **CREATE_COMPLETE** indicates that all resources have been deployed.
+The stack status indicates progress of the operation. Status vale **CREATE_COMPLETE** indicates that all resources have been deployed. At this stage the output value of the stack can be seen:
 
+```
+{
+    "Stacks": [
+        {
+            "StackId": "arn:aws:cloudformation:eu-west-1:608998855138:stack/Web/8636b7d0-e8cf-11ec-bd5c-023a03f4704f",
+            "StackName": "Web",
+            "Parameters": [
+                {
+                    "ParameterKey": "S3BucketUrl",
+                    "ParameterValue": "https://test-s3bucket-vb4a4enxs4aw.s3.amazonaws.com"
+                }
+            ],
+            "CreationTime": "2022-06-10T15:10:55.019000+00:00",
+            "RollbackConfiguration": {},
+            "StackStatus": "CREATE_COMPLETE",
+            "DisableRollback": false,
+            "NotificationARNs": [],
+            "Capabilities": [
+                "CAPABILITY_IAM"
+            ],
+            "Outputs": [
+                {
+                    "OutputKey": "ServerIp",
+                    "OutputValue": "34.240.212.83",
+                    "Description": "IP address of the web server"
+                }
+            ],
+            "Tags": [],
+            "EnableTerminationProtection": false,
+            "DriftInformation": {
+                "StackDriftStatus": "NOT_CHECKED"
+            }
+        }
+    ]
+}
+```
+
+Take note of the public IP address of the deployed web server. let's test it from the command line:
+
+```
+curl -v http://IP_ADDRESS_HERE -o /dev/null
+```
+
+This should return ouptut similar to the one below. 
+
+```
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 34.240.212.83...
+* TCP_NODELAY set
+* Connected to 34.240.212.83 (34.240.212.83) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 34.240.212.83
+> User-Agent: curl/7.64.1
+> Accept: */*
+> 
+< HTTP/1.1 403 Forbidden
+< Date: Fri, 10 Jun 2022 15:23:43 GMT
+< Server: Apache/2.4.53 ()
+< Upgrade: h2,h2c
+< Connection: Upgrade
+< Last-Modified: Tue, 12 Apr 2022 11:59:29 GMT
+< ETag: "e2e-5dc73cb04ea40"
+< Accept-Ranges: bytes
+< Content-Length: 3630
+< Content-Type: text/html; charset=UTF-8
+< 
+{ [3630 bytes data]
+100  3630  100  3630    0     0  84418      0 --:--:-- --:--:-- --:--:-- 84418
+* Connection #0 to host 34.240.212.83 left intact
+* Closing connection 0
+```
+
+You can also verify the operation of the web server by opening the IP address in a web browser (use http:// prefix)
+
+Since the stack runs on an EC2 instance, to avoid unnecessary costs remove the deployed infrastructure by executing following command:
+
+```
+aws cloudformation delete-stack --stack-name Web
+```

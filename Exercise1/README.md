@@ -20,7 +20,7 @@ Resources:
 
 ```
 
-Templates describe resources which can be deployed through CloudFormation. Once deployed, the cloud fomration creates a **stack**. In order to deploy the template execute following command from the command line:
+Templates describe resources which can be deployed through CloudFormation. Once deployed, CloudFormation creates a **stack**. In order to deploy the template, execute following command from the command line:
 
 ```
 aws cloudformation deploy --stack-name Test --template-file s3.yaml --parameter-overrides Name=mybucket
