@@ -17,7 +17,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${S3BucketUrl}/vpc.yaml"
 
-  # Web server using outputs of hte network stack
+  # Web server using outputs of the network stack
   WebServer:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -27,9 +27,9 @@ Resources:
         VPC: !GetAtt Network.Outputs.VpcId
 ```
 
-As you can see the templae creates two **nested stacks** and uses S3BucketUrl parameter to provide location of their templates.
+As you can see, the templae creates two **nested stacks** and uses S3BucketUrl parameter to provide location of their templates.
 
-Before we start, let's set some environment variables so we do not have to type them over and over again. Let's set two variables ot the values of outputs from Exercise 1:
+Before we start, let's set some environment variables so we do not have to type them over and over again. Let's set two environment variables to the values of outputs from Exercise 1:
 
 ```
 export BUCKET_NAME=<your bucket name here>
@@ -38,7 +38,12 @@ export BUCKET_URL=<your bucket URL here>
 
 we can verify that the variables have been set correctly by executing 
 
-In order to deploy this stack we need to upload all the templates to an S3 bucket. Let's do that by executing following command in the **Exercise2** directory using the bucket name from Exercise 1.
+```
+echo $BUCKET_NAME
+echo $BUCKET_URL
+```
+
+In order to deploy this stack we need to upload all the templates to an S3 bucket. Let's do that by executing following command in the **Exercise2** directory.
 ```
 aws s3 cp . s3://$BUCKET_NAME --recursive
 ```

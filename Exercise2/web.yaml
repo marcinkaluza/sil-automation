@@ -10,7 +10,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${S3BucketUrl}/vpc.yaml"
 
-  # Web server using outputs of hte network stack
+  # Web server using outputs of the network stack
   WebServer:
     Type: AWS::CloudFormation::Stack
     Properties:
