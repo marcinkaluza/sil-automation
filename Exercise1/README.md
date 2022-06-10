@@ -98,7 +98,7 @@ Once redeployed, we can check stack outputs by executing following command:
 aws cloudformation describe-stacks --stack-name Test
 ```
 
-Take note of the outpus, and save the values for future reference as we will need them in the next exercise. Notice the semi-random nature of the bucket's name.
+Take note of the outpus, and save their values for future reference as we will need them in the next exercise. Notice the semi-random nature of the bucket's name.
 
 ```
 {
