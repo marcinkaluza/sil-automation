@@ -1,0 +1,25 @@
+Parameters:
+  S3BucketUrl:
+    Type: String
+    Description: S3 bucket where the child templates are stored
+
+Resources:
+  # Network stack
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${S3BucketUrl}/vpc.yaml"
+
+  # Web server using outputs of hte network stack
+  WebServer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${S3BucketUrl}/ec2.yaml"
+      Parameters:
+        Subnet: !GetAtt Network.Outputs.PublicSubnet1Id
+        VPC: !GetAtt Network.Outputs.VpcId
+
+Outputs:
+  ServerIp:
+    Description: IP address of the web server
+    Value: !GetAtt WebServer.Outputs.PublicIp

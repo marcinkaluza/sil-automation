@@ -1,0 +1,237 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This CF template deploys a base VPC infrastructure with public and private subnets."
+
+Mappings:
+  RegionsAZ:
+    eu-west-1:
+      "1": eu-west-1a
+      "2": eu-west-1b
+      "3": eu-west-1c
+    eu-west-2:
+      "1": eu-west-2a
+      "2": eu-west-2b
+      "3": eu-west-2c
+    eu-central-1:
+      "1": eu-central-1a
+      "2": eu-central-1b
+      "3": eu-central-1c
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+
+  publicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "1"]
+      Tags:
+        - Key: Name
+          Value: "Public Subnet 1"
+
+  publicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "2"]
+      Tags:
+        - Key: Name
+          Value: "Public Subnet 2"
+
+  publicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "3"]
+      Tags:
+        - Key: Name
+          Value: "Public Subnet 3"
+
+  privateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "1"]
+      Tags:
+        - Key: Name
+          Value: "Private Subnet 1"
+
+  privateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "2"]
+      Tags:
+        - Key: Name
+          Value: "Private Subnet 2"
+
+  privateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: 10.0.5.0/24
+      AvailabilityZone: !FindInMap ["RegionsAZ", !Ref "AWS::Region", "3"]
+      Tags:
+        - Key: Name
+          Value: "Private Subnet 3"
+
+  # Internet gateway and attachment
+  internetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "Internet Gateway"
+
+  igwAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref internetGateway
+      VpcId: !Ref VPC
+
+  # Public route table
+  publicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: "Public Route Table"
+
+  internetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: publicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: internetGateway
+
+  publicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: publicSubnet1
+      RouteTableId:
+        Ref: publicRouteTable
+
+  publicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: publicSubnet2
+      RouteTableId:
+        Ref: publicRouteTable
+
+  publicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: publicSubnet3
+      RouteTableId:
+        Ref: publicRouteTable
+
+  # Nat gateway
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EIP
+          - AllocationId
+      SubnetId:
+        Ref: publicSubnet1
+      Tags:
+        - Key: Name
+          Value: "NAT"
+
+  EIP:
+    DependsOn: igwAttachment
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "NAT IP"
+
+  # Private route table
+  privateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: "Private Route Table"
+
+  natRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: privateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NATGateway
+
+  privateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: privateSubnet1
+      RouteTableId:
+        Ref: privateRouteTable
+
+  privateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: privateSubnet2
+      RouteTableId:
+        Ref: privateRouteTable
+
+  privateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: privateSubnet3
+      RouteTableId:
+        Ref: privateRouteTable
+
+Outputs:
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+
+  PublicSubnet1Id:
+    Description: The ID of public subnet 1
+    Value: !Ref publicSubnet1
+
+  PublicSubnet2Id:
+    Description: The ID of public subnet 1
+    Value: !Ref publicSubnet2
+
+  PrivateSubnet1Id:
+    Description: The ID of private subnet 1
+    Value: !Ref privateSubnet1
+
+  PrivateSubnet2Id:
+    Description: The ID of private subnet 2
+    Value: !Ref privateSubnet2

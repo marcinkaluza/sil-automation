@@ -1,0 +1,16 @@
+# Optional template format indicator
+AWSTemplateFormatVersion: "2010-09-09"
+
+# List of template parameters (optional)
+Parameters:
+  Name:
+    Type: String
+    Description: Name of the bucket to be created
+
+# Section containing resources to be created (required)
+Resources:
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref Name # Refes to the parameter
+
