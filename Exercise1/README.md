@@ -1,6 +1,6 @@
 # Exercise 1
 
-The purpose of this exercise is to familiarize you with the basic of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of the tamplate:
+The purpose of this exercise is to familiarize you with the basic of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of a simplae CludFormation tamplate:
 ```
 # Optional template format indicator
 AWSTemplateFormatVersion: "2010-09-09"
@@ -20,7 +20,7 @@ Resources:
 
 ```
 
-Templates describe resources which can be deployed through CloudFormation. Once deployed, CloudFormation creates a **stack**. In order to deploy the template, execute following command from the command line:
+Templates describe resources and can be deployed through CloudFormation. Once deployed, CloudFormation creates a **stack**. In order to deploy the template, in the **Exercise1** directory execute following command:
 
 ```
 aws cloudformation deploy --stack-name Test --template-file s3.yaml --parameter-overrides Name=mybucket
@@ -33,10 +33,10 @@ Waiting for stack create/update to complete
 
 Failed to create/update the stack. Run the following command
 to fetch the list of events leading up to the failure
-aws cloudformation describe-stack-events --stack-name bucket
+aws cloudformation describe-stack-events --stack-name Test
 ```
 
-As you can see the command failed because an s3 bucket "mybucket" already exists. This is a common problem with resources that require globally unique names. In order to alleviate this problem, let's modify the template and deploy it once more. Before we do it though we need to delete the "bucket" stack as it has been created in invalid state. To do so let;s execute the following command:
+As you can see the command failed because an s3 bucket "mybucket" already exists. This is a common problem with resources that require globally unique names. In order to alleviate this problem, let's modify the template and deploy it once more. Before we do it though we need to delete the "Test" stack as it has been created in invalid state. To do so let's execute the following command:
 
 ```
 aws cloudformation delete-stack --stack-name Test
@@ -92,7 +92,7 @@ We can now redeploy the existing stack
 aws cloudformation deploy --stack-name Test --template-file s3.yaml
 ```
 
-Once redeployed, we can check stack outputs by execiting following command:
+Once redeployed, we can check stack outputs by executing following command:
 
 ```
 aws cloudformation describe-stacks --stack-name Test
