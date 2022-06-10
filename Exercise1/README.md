@@ -1,6 +1,6 @@
 # Exercise 1
 
-The purpose of this exercise is to familiarize you with the basic of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of a simple CludFormation template:
+The purpose of this exercise is to familiarize you with the basics of CloudFormation templates. Sample file **s3.yaml** illustrates anatomy of a simple CludFormation template:
 ```
 # Optional template format indicator
 AWSTemplateFormatVersion: "2010-09-09"
