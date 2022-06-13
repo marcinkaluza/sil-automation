@@ -58,10 +58,14 @@ In order to test our product, we need to login to the console with **ServcieCata
 5. To delete the product, select it in the list of provisioned products and from the **Action** menu select **Terminate**
 
 ## Cleanup resources
-To delete service catalog user, execute following commands:
+To delete **ServiceCatalogUser**, execute following commands:
 ```
 aws iam delete-login-profile --user-name ServiceCatalogUser
 aws iam detach-user-policy --user-name ServiceCatalogUser --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 aws iam detach-user-policy --user-name ServiceCatalogUser --policy-arn arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess
 aws iam delete-user --user-name ServiceCatalogUser
 ```
+In order to delete the product and portfolio, first make sure that the provisioned product is terminated. Then using AWS console perform following tasks:
+1) Remove access to **Test** portfolio for **ServiceCatalogUser** account
+2) Delete **Bucket** product from portfolio
+3) Finally, delete **Test** portfolio
