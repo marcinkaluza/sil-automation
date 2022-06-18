@@ -1,0 +1,232 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This CF template deploys a CI/CD pipeline for building infrastructure"
+
+Parameters:
+  CodeCommitRepositoryName:
+    Type: String
+    Description: Name of the CodeCommit repository
+
+  ProjectName:
+    Type: String
+    Description: Name of your project
+
+  PipelineName:
+    Type: String
+    Description: Name of the CI/CD pipeline
+
+  Environment:
+    Type: String
+    Default: Dev
+    Description: Name of the environment this pipeline belongs to
+
+Resources:
+  CodeCommitRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties: 
+      RepositoryDescription: !Sub "${ProjectName} repository"
+      RepositoryName: !Ref CodeCommitRepositoryName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # S3 Bucket for artifact storage
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain # the policy is set to Retain as deletion of S3 bucket is possible only when they are empty
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+ 
+  # IAM role for the pipeline
+  PipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
+      Policies:
+        - PolicyName: AccessToS3artifact
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                Resource:
+                  - !GetAtt S3Bucket.Arn
+        - PolicyName: AccessToCodeCommit
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codecommit:UploadArchive
+                Resource: !GetAtt CodeCommitRepo.Arn
+        - PolicyName: AccessToCodeCFN
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                Resource: "*"
+        - PolicyName: PassRoleToCfn
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt CFNRole.Arn
+
+  # IAM role for the CFN deployment
+  CFNRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
+      Policies:
+        - PolicyName: AccessToS3artifact
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                Resource:
+                  - !GetAtt S3Bucket.Arn
+        - PolicyName: AccessToCodeCommit
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codecommit:UploadArchive
+                Resource: !GetAtt CodeCommitRepo.Arn
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
+      Name: !Ref PipelineName
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt PipelineRole.Arn
+      Stages:
+        - Name: SOURCE
+          Actions:
+            - ActionTypeId:
+                Version: "1"
+                Provider: CodeCommit
+                Category: Source
+                Owner: AWS
+              Configuration:
+                RepositoryName: !Ref CodeCommitRepositoryName
+                BranchName: main
+                PollForSourceChanges: "false"
+              Name: Source
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+        - Name: DEPLOY
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !GetAtt [CFNRole, Arn]
+                StackName: "CICD-Stack"
+                TemplatePath: "SourceArtifact::infra.yaml"
+              InputArtifacts:
+                - Name: SourceArtifact
+
+  # Role for cloud watch event
+  CloudWatchEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: cwe-pipeline-execution
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}"
+
+  # Cloud watch event
+  AmazonCloudWatchEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - "CodeCommit Repository State Change"
+        resources:
+          - !GetAtt CodeCommitRepo.Arn
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - main
+      Targets:
+        - Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}"
+          RoleArn: !GetAtt CloudWatchEventRole.Arn
+          Id: codepipeline-AppPipeline
