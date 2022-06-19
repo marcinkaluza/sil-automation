@@ -37,3 +37,5 @@ All exercises contain their detailed instructions:
 * [Exercise 1](/Exercise1/README.md)
 * [Exercise 2](/Exercise2/README.md)
 * [Exercise 3](/Exercise3/README.md)
+* [Exercise 4](/Exercise4/README.md)
+* [Exercise 5](/Exercise5/README.md)

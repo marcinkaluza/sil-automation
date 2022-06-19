@@ -1,0 +1,127 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This CF template deploys an EC2 instance in a private VPC"
+
+Mappings:
+  RegionsAZ:
+    eu-west-1:
+      "1": eu-west-1a
+      "2": eu-west-1b
+      "3": eu-west-1c
+    eu-west-2:
+      "1": eu-west-2a
+      "2": eu-west-2b
+      "3": eu-west-2c
+    eu-central-1:
+      "1": eu-central-1a
+      "2": eu-central-1b
+      "3": eu-central-1c
+    us-east-1:
+      "1": us-east-1a
+      "2": us-east-1b
+      "3": us-east-1c      
+  RegionMap:
+    eu-west-1:
+      AMI: ami-0fc970315c2d38f01
+    eu-west-2:
+      AMI: ami-098828924dc89ea4a
+    eu-central-1:
+      AMI: ami-0a6dc7529cd559185
+    us-east-1:
+      AMI: ami-0022f774911c1d690
+
+Parameters:
+  Subnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet where to create EC2 instance
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: Id of the VPC where to create instance
+
+Resources:
+  # Web server security group
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Web server security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        # Inbound traffic on port 22 from the VPC
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP ingress from the internet
+      SecurityGroupEgress:
+        # HTTPS to the internet
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS egress tothe internet
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP egress tothe internet
+  # Web server instance role
+  WebServerInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: "Web Server Instance Role"
+
+  # Instance profile
+  WebServerInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref WebServerInstanceRole
+
+  # Web server instance
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId:
+        Fn::FindInMap:
+          - RegionMap
+          - !Ref AWS::Region
+          - AMI
+      IamInstanceProfile: !Ref WebServerInstanceProfile
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+      Tags:
+        - Key: Name
+          Value: "Web Server"
+
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: WebServerSecurityGroup
+          SubnetId:
+            Ref: Subnet
+
+Outputs:
+  PublicIp:
+    Description: IP address of the web server
+    Value: !GetAtt WebServer.PublicIp
